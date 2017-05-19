@@ -1,0 +1,96 @@
+//Question1
+A = LOAD 'hdfs://cshadoop1/user/vxv160730/Question1/business.csv' AS line;
+B = FOREACH A GENERATE FLATTEN((tuple(chararray,chararray,chararray,chararray))REGEX_EXTRACT_ALL(line,'(.*)\\:\\:(.*)\\:\\:(.*)')) AS (f1,f2,f3);
+
+C = FOREACH B GENERATE $0 as business_id,$1 as full_address,$2 as categories;
+D = FILTER C by (full_address matches '.*Palo Alto.*');
+
+E = LOAD 'hdfs://cshadoop1/user/vxv160730/Question2/review.csv' AS line1;
+F = FOREACH E GENERATE FLATTEN((tuple(chararray,chararray,chararray,float))REGEX_EXTRACT_ALL(line1,'(.*)\\:\\:(.*)\\:\\:(.*)\\:\\:(.*)')) AS (f1,f2,f3,f4);
+
+G = FOREACH F GENERATE $2 as business_id,$3 as stars;
+
+review_group = GROUP G by business_id;
+
+H =  FOREACH review_group generate group as business_id, AVG($1.stars) as avg_ratings;
+
+business_review = JOIN D by business_id, H by business_id;
+
+filtered_business_review = FILTER business_review by full_address is not null and categories is not null;
+
+sorted_business = ORDER filtered_business_review BY avg_ratings DESC;
+
+limit_business = LIMIT sorted_business 10;
+
+dump limit_business;
+
+
+
+//Question2
+A = LOAD 'hdfs://cshadoop1/user/vxv160730/Question1/business.csv' AS line;
+B = FOREACH A GENERATE FLATTEN((tuple(chararray,chararray,chararray,chararray))REGEX_EXTRACT_ALL(line,'(.*)\\:\\:(.*)\\:\\:(.*)')) AS (f1,f2,f3);
+
+C = FOREACH B GENERATE $0 as business_id,$1 as full_address,$2 as categories;
+business1 = FILTER C by (full_address matches '.*CA.*');
+D = FILTER business1 BY NOT(full_address MATCHES '.*Palo Alto.*');
+
+E = LOAD 'hdfs://cshadoop1/user/vxv160730/Question2/review.csv' AS line1;
+F = FOREACH E GENERATE FLATTEN((tuple(chararray,chararray,chararray,float))REGEX_EXTRACT_ALL(line1,'(.*)\\:\\:(.*)\\:\\:(.*)\\:\\:(.*)')) AS (f1,f2,f3,f4);
+
+G = FOREACH F GENERATE $2 as business_id,$3 as stars;
+
+review_group = GROUP G by business_id;
+
+H =  FOREACH review_group generate group as business_id, AVG($1.stars) as avg_ratings;
+
+business_review = JOIN D by business_id, H by business_id;
+
+filtered_business_review = FILTER business_review by full_address is not null and categories is not null;
+
+sorted_business = ORDER filtered_business_review BY avg_ratings DESC;
+
+limit_business = LIMIT sorted_business 10;
+
+dump limit_business;
+
+
+
+//Question3
+A = LOAD 'hdfs://cshadoop1/user/vxv160730/Question1/business.csv' AS line;
+B = FOREACH A GENERATE FLATTEN((tuple(chararray,chararray,chararray,chararray))REGEX_EXTRACT_ALL(line,'(.*)\\:\\:(.*)\\:\\:(.*)')) AS (f1,f2,f3);
+
+C = FOREACH B GENERATE $0 as business_id,$1 as full_address,$2 as categories;
+filtered_business = FILTER C by $0 is not null and $0!='NaN';
+
+E = LOAD 'hdfs://cshadoop1/user/vxv160730/Question2/review.csv' AS line1;
+F = FOREACH E GENERATE FLATTEN((tuple(chararray,chararray,chararray,float))REGEX_EXTRACT_ALL(line1,'(.*)\\:\\:(.*)\\:\\:(.*)\\:\\:(.*)')) AS (f1,f2,f3,f4);
+filtered_review = FILTER F by $2 is not null and $2!='NaN';
+
+cogroup_relation = COGROUP filtered_business by $2, filtered_review by $2;
+
+Top_records = LIMIT cogroup_relation 6;
+dump Top_records;
+
+
+
+//Question4
+
+A = LOAD 'hdfs://cshadoop1/user/vxv160730/Question1/business.csv' AS line;
+B = FOREACH A GENERATE FLATTEN((tuple(chararray,chararray,chararray))REGEX_EXTRACT_ALL(line,'(.*)\\:\\:(.*)\\:\\:(.*)')) AS (f1,f2,f3);
+
+business = FOREACH B GENERATE $0 as business_id,$1 as full_address,$2 as categories;
+E = FILTER business by (full_address matches '.*Stanford.*');
+
+C = LOAD 'hdfs://cshadoop1/user/vxv160730/Question2/review.csv' AS line1;
+D = FOREACH C GENERATE FLATTEN((tuple(chararray,chararray,chararray,chararray))REGEX_EXTRACT_ALL(line1,'(.*)\\:\\:(.*)\\:\\:(.*)\\:\\:(.*)')) AS (f1,f2,f3,f4);
+F = FOREACH D GENERATE $0 as u_id,$1 as r_id,$2 as business_id, $3 as stars;
+
+business_review = JOIN E by business_id, F by business_id;
+review = FOREACH business_review GENERATE $4 as user_id,$6 as stars;
+Top_records = LIMIT review 10;
+
+dump Top_records;
+
+
+
+
