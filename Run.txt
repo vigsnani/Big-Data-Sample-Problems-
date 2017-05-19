@@ -1,0 +1,1 @@
+hadoop jar JavaHDFS-0.0.1-SNAPSHOT.jar JavaHDFS.JavaHDFS.HW1Question1 <hdfs://user/cshadoop1/user/vxv160730/Question1/business.csv> <hdfs://user/cshadoop1/user/vxv160730/Question1/out>
